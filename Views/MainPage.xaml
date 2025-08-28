@@ -1,0 +1,152 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:primitives="clr-namespace:CommunityToolkit.Maui.Core.Primitives;assembly=CommunityToolkit.Maui.Core"
+             xmlns:viewmodels="clr-namespace:TVPlayerMAUI.ViewModels"
+             xmlns:models="clr-namespace:TVPlayerMAUI.Models"
+             xmlns:views="clr-namespace:TVPlayerMAUI.Views"
+             x:Class="TVPlayerMAUI.Views.MainPage"
+             x:DataType="viewmodels:MainPageViewModel"
+             Title="TVPlayer Desktop">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+            <toolkit:IsEqualConverter x:Key="IsEqualConverter" />
+            <views:TimeSpanToTimeStringConverter x:Key="TimeSpanConverter" />
+
+            <Style x:Key="HideOnFullScreenStyle" TargetType="VisualElement">
+                <Setter Property="IsVisible" Value="True" />
+                <Style.Triggers>
+                    <DataTrigger TargetType="VisualElement" Binding="{Binding IsVideoFullScreen}" Value="True">
+                        <Setter Property="IsVisible" Value="False" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <HorizontalStackLayout Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource HideOnFullScreenStyle}" Spacing="10" Padding="10">
+                <Entry x:Name="M3uUrlEntry" Placeholder="Cole a URL da sua lista .m3u aqui" Text="{Binding M3uUrl}" HorizontalOptions="FillAndExpand" />
+                <Button Text="Carregar Lista" Command="{Binding LoadChannelsCommand}" IsEnabled="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}" />
+            </HorizontalStackLayout>
+
+            <Grid Grid.Row="1" Grid.Column="0" Style="{StaticResource HideOnFullScreenStyle}">
+                <Grid RowDefinitions="Auto, Auto, Auto, *">
+                    <Button Grid.Row="0" Text="&lt; Voltar para Grupos" Command="{Binding GoBackToGroupsCommand}" IsVisible="{Binding IsShowingChannelsInGroup}" Margin="5,0"/>
+                    <Label Grid.Row="1" Text="{Binding HeaderTitle}" FontSize="16" FontAttributes="Bold" Padding="10,5" />
+                    <SearchBar x:Name="ChannelSearchBar" Grid.Row="2" Placeholder="Buscar canal..." Text="{Binding SearchText}" />
+
+                    <CollectionView Grid.Row="3" x:Name="GroupsCollectionView" ItemsSource="{Binding GroupSummaries}" IsVisible="{Binding IsShowingGroups}" SelectedItem="{Binding SelectedGroup, Mode=TwoWay}" SelectionMode="Single">
+                        <CollectionView.Behaviors>
+                            <toolkit:EventToCommandBehavior 
+                                EventName="SelectionChanged" 
+                                Command="{Binding SelectGroupCommand}"
+                                CommandParameter="{Binding Source={x:Reference GroupsCollectionView}, Path=SelectedItem}" />
+                        </CollectionView.Behaviors>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:ChannelGroupSummary">
+                                <Frame Padding="10" Margin="5" BorderColor="LightGray" CornerRadius="5">
+                                    <HorizontalStackLayout Spacing="5">
+                                        <Label Text="{Binding Name}" FontAttributes="Bold" VerticalOptions="Center"/>
+                                        <Label Text="{Binding ChannelCount, StringFormat='({0})'}" TextColor="Gray" VerticalOptions="Center"/>
+                                    </HorizontalStackLayout>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <CollectionView Grid.Row="3" x:Name="ChannelsCollectionView" ItemsSource="{Binding ChannelsInView}" IsVisible="{Binding IsShowingChannels}" SelectedItem="{Binding SelectedChannel, Mode=TwoWay}" SelectionMode="Single">
+                        <CollectionView.Behaviors>
+                            <toolkit:EventToCommandBehavior 
+                                EventName="SelectionChanged" 
+                                Command="{Binding SelectChannelCommand}"
+                                CommandParameter="{Binding Source={x:Reference ChannelsCollectionView}, Path=SelectedItem}" />
+                        </CollectionView.Behaviors>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:Channel">
+                                <Frame Padding="10" Margin="5" BorderColor="Gray" CornerRadius="5">
+                                    <Label Text="{Binding Name}" VerticalOptions="Center" LineBreakMode="TailTruncation"/>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </Grid>
+            </Grid>
+
+            <Grid x:Name="VideoContainer" Grid.Row="1" Grid.Column="1" BackgroundColor="Black">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Grid.Row" Value="1" />
+                        <Setter Property="Grid.Column" Value="1" />
+                        <Setter Property="Grid.RowSpan" Value="1" />
+                        <Setter Property="Grid.ColumnSpan" Value="1" />
+                        <Style.Triggers>
+                            <DataTrigger TargetType="Grid" Binding="{Binding IsVideoFullScreen}" Value="True">
+                                <Setter Property="Grid.Row" Value="0" />
+                                <Setter Property="Grid.Column" Value="0" />
+                                <Setter Property="Grid.RowSpan" Value="2" />
+                                <Setter Property="Grid.ColumnSpan" Value="2" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <toolkit:MediaElement x:Name="mediaPlayer" Source="{Binding VideoSource}" ShouldAutoPlay="True" ShouldShowPlaybackControls="False" HorizontalOptions="Fill" VerticalOptions="Fill" PositionChanged="mediaPlayer_PositionChanged"/>
+
+                <ActivityIndicator Color="White" HorizontalOptions="Center" VerticalOptions="Center"
+                                   IsRunning="{Binding Source={x:Reference mediaPlayer}, Path=CurrentState, Converter={StaticResource IsEqualConverter}, ConverterParameter=Buffering}" />
+
+                <Grid x:Name="FullScreenOverlay" Opacity="0" BackgroundColor="Transparent">
+                    <Grid.GestureRecognizers>
+                        <PointerGestureRecognizer PointerMoved="FullScreen_PointerMoved" />
+                    </Grid.GestureRecognizers>
+                    <Border VerticalOptions="End" Padding="10" Margin="20" StrokeThickness="0" BackgroundColor="#80000000" StrokeShape="RoundRectangle 10">
+                        <VerticalStackLayout Spacing="10">
+                            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="10">
+                                <Label Grid.Column="0" Text="{Binding Position, Converter={StaticResource TimeSpanConverter}}" TextColor="White" VerticalOptions="Center"/>
+                                <Slider Grid.Column="1" x:Name="timelineSlider" Maximum="{Binding Source={x:Reference mediaPlayer}, Path=Duration.TotalSeconds}" Value="{Binding Position.TotalSeconds}" DragCompleted="timelineSlider_DragCompleted" />
+                                <Label Grid.Column="2" Text="{Binding Source={x:Reference mediaPlayer}, Path=Duration, Converter={StaticResource TimeSpanConverter}}" TextColor="White" VerticalOptions="Center"/>
+                            </Grid>
+                            <HorizontalStackLayout Spacing="15" HorizontalOptions="Center" VerticalOptions="Center">
+                                <Button x:Name="PlayPauseButton" Text="Pause" Clicked="PlayPauseButton_Clicked" WidthRequest="80"/>
+                                <Button x:Name="MuteButton" Text="Mudo" Clicked="MuteButton_Clicked" WidthRequest="80" />
+                                <Label Text="Volume:" VerticalOptions="Center" TextColor="White"/>
+                                <Slider Maximum="1" Minimum="0" WidthRequest="150" Value="{Binding Source={x:Reference mediaPlayer}, Path=Volume, Mode=TwoWay}" />
+                                <Button x:Name="FullScreenButton" Command="{Binding ToggleVideoFullScreenCommand}" WidthRequest="150">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsVideoFullScreen}" Value="True">
+                                            <Setter Property="Text" Value="Sair da Tela Cheia" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsVideoFullScreen}" Value="False">
+                                            <Setter Property="Text" Value="Tela Cheia" />
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <Grid IsVisible="{Binding IsLoading}" Grid.ColumnSpan="2" Grid.RowSpan="2" BackgroundColor="#80000000">
+            <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="10">
+                <ActivityIndicator IsRunning="{Binding IsLoading}" Color="White" />
+                <Label Text="{Binding LoadingStatus}" TextColor="White" HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

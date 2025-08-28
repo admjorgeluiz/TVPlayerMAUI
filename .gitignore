@@ -1,0 +1,19 @@
+# Padrões do Visual Studio
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Pastas de compilação
+[Bb]in/
+[Oo]bj/
+
+# Pasta de configuração do VS
+.vs/
+
+# Arquivos de publicação
+[Pp]ublish/
+
+# Outros
+*.DS_Store
+Thumbs.db
