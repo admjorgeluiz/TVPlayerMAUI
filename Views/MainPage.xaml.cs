@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel;
 using TVPlayerMAUI.ViewModels;
-using CommunityToolkit.Maui.Core; // Adicionado para MediaStateChangedEventArgs
+using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Maui.Core.Primitives;
 using Microsoft.Maui.Controls;
-using Microsoft.Maui.Devices; // Adicionado para o DeviceDisplay
+using Microsoft.Maui.Devices;
 
 #if WINDOWS
 using Microsoft.Maui.Platform;
@@ -44,19 +44,14 @@ public partial class MainPage : ContentPage
         _hideControlsTimer?.Stop();
     }
 
-    // NOVO MÉTODO PARA MANTER A TELA ACESA
     private void MediaPlayer_StateChanged(object? sender, MediaStateChangedEventArgs e)
     {
-        // Se o novo estado for "Tocando"
         if (e.NewState == MediaElementState.Playing)
         {
-            // Pede para o dispositivo manter a tela acesa
             DeviceDisplay.Current.KeepScreenOn = true;
         }
-        // Para qualquer outro estado (Pausado, Parado, Falha, etc.)
         else
         {
-            // Libera o dispositivo para seguir suas configurações de energia normais
             DeviceDisplay.Current.KeepScreenOn = false;
         }
     }

@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 
-namespace TVPlayerMAUI.Views; // Ou TVPlayerMAUI.Converters
+namespace TVPlayerMAUI.Views;
 
 public class TimeSpanToTimeStringConverter : IValueConverter
 {
@@ -8,7 +8,6 @@ public class TimeSpanToTimeStringConverter : IValueConverter
     {
         if (value is TimeSpan ts)
         {
-            // Se o vídeo tiver horas, mostra o formato h:mm:ss, senão, m:ss
             return ts.Hours > 0
                 ? ts.ToString(@"h\:mm\:ss")
                 : ts.ToString(@"m\:ss");

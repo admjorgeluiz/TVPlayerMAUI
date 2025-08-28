@@ -120,7 +120,6 @@ namespace TVPlayerMAUI.ViewModels
             }
         }
 
-        // Comandos para a nova navegação de UI
         [RelayCommand]
         private void SelectGroup(ChannelGroupSummary? groupSummary)
         {
@@ -157,8 +156,6 @@ namespace TVPlayerMAUI.ViewModels
         {
             IsVideoFullScreen = !IsVideoFullScreen;
         }
-
-        // Lógica de busca
         partial void OnSearchTextChanged(string? value)
         {
             _searchCancellationTokenSource?.Cancel();
@@ -193,7 +190,6 @@ namespace TVPlayerMAUI.ViewModels
         {
             if (App.Current?.MainPage is null) return;
 
-            // Usa nosso serviço para checar por atualizações
             var (isUpdateAvailable, newVersion, downloadUrl) = await _updateService.CheckForUpdate();
 
             if (isUpdateAvailable)
@@ -206,7 +202,6 @@ namespace TVPlayerMAUI.ViewModels
 
                 if (download)
                 {
-                    // Abre o navegador padrão do usuário no link do instalador
                     await Launcher.OpenAsync(new Uri(downloadUrl));
                 }
             }

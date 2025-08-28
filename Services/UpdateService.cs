@@ -1,5 +1,4 @@
-﻿// Localização: Services/UpdateService.cs
-using System.Text.Json;
+﻿using System.Text.Json;
 using TVPlayerMAUI.Models;
 
 namespace TVPlayerMAUI.Services;
@@ -12,7 +11,6 @@ public class UpdateService
     public UpdateService()
     {
         _httpClient = new HttpClient();
-        // A API do GitHub exige um User-Agent
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("TVPlayerMAUI-Updater");
     }
 
@@ -20,10 +18,8 @@ public class UpdateService
     {
         try
         {
-            // 1. Pega a versão atual do nosso próprio aplicativo
             var currentVersion = new Version(AppInfo.Current.VersionString);
 
-            // 2. Consulta a API do GitHub para a última release
             var response = await _httpClient.GetStringAsync(GitHubApiUrl);
             var latestRelease = JsonSerializer.Deserialize<GitHubRelease>(response);
 
@@ -36,7 +32,6 @@ public class UpdateService
 
             if (latestVersion > currentVersion)
             {
-                // Encontra o link do nosso instalador .exe
                 var installerAsset = latestRelease.Assets.FirstOrDefault(a => a.DownloadUrl.EndsWith(".exe"));
                 if (installerAsset is not null)
                 {
@@ -46,7 +41,6 @@ public class UpdateService
         }
         catch (Exception ex)
         {
-            // Lida com erros de internet ou de parsing
             System.Diagnostics.Debug.WriteLine($"Erro ao checar atualização: {ex.Message}");
         }
 

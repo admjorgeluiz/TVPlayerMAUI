@@ -15,7 +15,6 @@ namespace TVPlayerMAUI.Services
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
         }
 
-        // O método agora aceita um objeto para reportar o progresso
         public async Task<List<Channel>> Parse(string url, IProgress<string> progress)
         {
             var channels = new List<Channel>();
@@ -24,7 +23,6 @@ namespace TVPlayerMAUI.Services
             {
                 progress.Report("Baixando a lista de canais...");
 
-                // OTIMIZAÇÃO: Usamos GetStreamAsync para ler a resposta da rede como um fluxo (stream)
                 using var stream = await _httpClient.GetStreamAsync(url);
                 using var reader = new StreamReader(stream);
 
@@ -68,7 +66,6 @@ namespace TVPlayerMAUI.Services
                         currentChannel = null;
                         channelCount++;
 
-                        // FEEDBACK DE PROGRESSO: A cada 1000 canais, envia uma atualização
                         if (channelCount % 1000 == 0)
                         {
                             progress.Report($"Analisando... {channelCount} canais encontrados.");
@@ -81,7 +78,7 @@ namespace TVPlayerMAUI.Services
             {
                 progress.Report($"Erro: {ex.Message}");
                 Debug.WriteLine($"Erro no parser: {ex}");
-                throw; // Re-lança a exceção para ser tratada no ViewModel
+                throw; 
             }
 
             return channels;

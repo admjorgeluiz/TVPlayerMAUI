@@ -5,9 +5,10 @@
         public App()
         {
             InitializeComponent();
+
+            UserAppTheme = AppTheme.Dark;
         }
 
-        // Esta é a forma moderna e recomendada de definir a janela principal
         protected override Window CreateWindow(IActivationState? activationState)
         {
             return new Window(new AppShell());

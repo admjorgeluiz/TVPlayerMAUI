@@ -1,8 +1,6 @@
-﻿// Localização: MauiProgram.cs
-
-using CommunityToolkit.Maui;
+﻿using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
-using TVPlayerMAUI.Services; // Adicionado para o M3UParser
+using TVPlayerMAUI.Services;
 using TVPlayerMAUI.ViewModels;
 using TVPlayerMAUI.Views;
 
@@ -16,7 +14,7 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
-            .UseMauiCommunityToolkitMediaElement() // Necessário para o player de vídeo
+            .UseMauiCommunityToolkitMediaElement()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -24,11 +22,9 @@ public static class MauiProgram
             });
 
 #if DEBUG
-        // Adiciona logging para ajudar na depuração
         builder.Logging.AddDebug();
 #endif
 
-        // Registrando nossos serviços, ViewModel e View
         builder.Services.AddSingleton<M3UParser>();
         builder.Services.AddSingleton<UpdateService>();
         builder.Services.AddSingleton<MainPageViewModel>();

@@ -1,6 +1,4 @@
-﻿// Localização: Models/Channel.cs
-
-namespace TVPlayerMAUI.Models
+﻿namespace TVPlayerMAUI.Models
 {
     public class Channel
     {
