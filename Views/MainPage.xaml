@@ -10,6 +10,14 @@
              x:DataType="viewmodels:MainPageViewModel"
              Title="TVPlayer Desktop">
 
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Atualizações"
+                     IconImageSource="settings_gear.svg"
+                     Command="{Binding ShowSettingsCommand}"
+                     Order="Primary"
+                     Priority="0" />
+    </ContentPage.ToolbarItems>
+    
     <ContentPage.Resources>
         <ResourceDictionary>
             <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
@@ -104,7 +112,7 @@
                     </Style>
                 </Grid.Style>
 
-                <toolkit:MediaElement x:Name="mediaPlayer" Source="{Binding VideoSource}" ShouldAutoPlay="True" ShouldShowPlaybackControls="False" HorizontalOptions="Fill" VerticalOptions="Fill" PositionChanged="mediaPlayer_PositionChanged"/>
+                <toolkit:MediaElement x:Name="mediaPlayer" Source="{Binding VideoSource}" ShouldAutoPlay="True" ShouldShowPlaybackControls="False" HorizontalOptions="Fill" VerticalOptions="Fill" PositionChanged="mediaPlayer_PositionChanged" StateChanged="MediaPlayer_StateChanged"/>
 
                 <ActivityIndicator Color="White" HorizontalOptions="Center" VerticalOptions="Center"
                                    IsRunning="{Binding Source={x:Reference mediaPlayer}, Path=CurrentState, Converter={StaticResource IsEqualConverter}, ConverterParameter=Buffering}" />

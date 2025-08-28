@@ -16,6 +16,7 @@ namespace TVPlayerMAUI.ViewModels
     public partial class MainPageViewModel : ObservableObject
     {
         private readonly M3UParser _m3uParser;
+        private readonly UpdateService _updateService;
         private List<Channel> _allChannels = new();
         private List<ChannelGroupSummary> _allGroupSummaries = new();
         private CancellationTokenSource? _searchCancellationTokenSource;
@@ -69,9 +70,11 @@ namespace TVPlayerMAUI.ViewModels
         [ObservableProperty]
         private TimeSpan _position;
 
-        public MainPageViewModel(M3UParser m3uParser)
+        public MainPageViewModel(M3UParser m3uParser, UpdateService updateService)
         {
             _m3uParser = m3uParser;
+            _updateService = updateService;
+
             M3uUrl = Preferences.Get("LastM3uUrl", string.Empty);
             if (!string.IsNullOrWhiteSpace(M3uUrl))
             {
@@ -183,6 +186,34 @@ namespace TVPlayerMAUI.ViewModels
             IsSearchResults = true;
             OnPropertyChanged(nameof(IsShowingChannelsInGroup));
             OnPropertyChanged(nameof(IsShowingChannels));
+        }
+
+        [RelayCommand]
+        private async Task ShowSettings()
+        {
+            if (App.Current?.MainPage is null) return;
+
+            // Usa nosso serviço para checar por atualizações
+            var (isUpdateAvailable, newVersion, downloadUrl) = await _updateService.CheckForUpdate();
+
+            if (isUpdateAvailable)
+            {
+                bool download = await App.Current.MainPage.DisplayAlert(
+                    "Atualização Disponível!",
+                    $"Uma nova versão ({newVersion}) foi encontrada. Deseja ir para a página de download agora?",
+                    "Sim, baixar!",
+                    "Agora não");
+
+                if (download)
+                {
+                    // Abre o navegador padrão do usuário no link do instalador
+                    await Launcher.OpenAsync(new Uri(downloadUrl));
+                }
+            }
+            else
+            {
+                await App.Current.MainPage.DisplayAlert("Tudo Certo!", "Você já está com a versão mais recente do TV Player.", "OK");
+            }
         }
     }
 }

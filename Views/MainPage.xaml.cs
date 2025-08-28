@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel;
 using TVPlayerMAUI.ViewModels;
+using CommunityToolkit.Maui.Core; // Adicionado para MediaStateChangedEventArgs
 using CommunityToolkit.Maui.Core.Primitives;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Devices; // Adicionado para o DeviceDisplay
 
 #if WINDOWS
 using Microsoft.Maui.Platform;
@@ -42,7 +44,23 @@ public partial class MainPage : ContentPage
         _hideControlsTimer?.Stop();
     }
 
-    // SUA LÓGICA DE TECLADO
+    // NOVO MÉTODO PARA MANTER A TELA ACESA
+    private void MediaPlayer_StateChanged(object? sender, MediaStateChangedEventArgs e)
+    {
+        // Se o novo estado for "Tocando"
+        if (e.NewState == MediaElementState.Playing)
+        {
+            // Pede para o dispositivo manter a tela acesa
+            DeviceDisplay.Current.KeepScreenOn = true;
+        }
+        // Para qualquer outro estado (Pausado, Parado, Falha, etc.)
+        else
+        {
+            // Libera o dispositivo para seguir suas configurações de energia normais
+            DeviceDisplay.Current.KeepScreenOn = false;
+        }
+    }
+
     private void SetupKeyboardHooks()
     {
 #if WINDOWS
@@ -93,7 +111,6 @@ public partial class MainPage : ContentPage
     }
 #endif
 
-    // LÓGICA DOS CONTROLES CUSTOMIZADOS
     private void InitializeHideTimer()
     {
         _hideControlsTimer = Dispatcher.CreateTimer();
@@ -139,7 +156,6 @@ public partial class MainPage : ContentPage
         }
     }
 
-    // NOVO: Chamado quando o usuário solta o slider da timeline
     private void timelineSlider_DragCompleted(object sender, EventArgs e)
     {
         if (sender is Slider slider)
@@ -148,14 +164,11 @@ public partial class MainPage : ContentPage
         }
     }
 
-    // NOVO: Chamado várias vezes por segundo enquanto o vídeo toca
     private void mediaPlayer_PositionChanged(object? sender, MediaPositionChangedEventArgs e)
     {
-        // Atualiza a propriedade no ViewModel, que por sua vez atualiza a Label e o Slider
         _viewModel.Position = e.Position;
     }
 
-    // LÓGICA DE TELA CHEIA
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(MainPageViewModel.IsVideoFullScreen))

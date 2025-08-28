@@ -29,7 +29,8 @@ public static class MauiProgram
 #endif
 
         // Registrando nossos serviços, ViewModel e View
-        builder.Services.AddSingleton<M3UParser>(); // Novo serviço do parser
+        builder.Services.AddSingleton<M3UParser>();
+        builder.Services.AddSingleton<UpdateService>();
         builder.Services.AddSingleton<MainPageViewModel>();
         builder.Services.AddSingleton<MainPage>();
 
