@@ -32,8 +32,6 @@ public class UpdateService
                 return (false, string.Empty, string.Empty);
             }
 
-            // 3. Compara as versões
-            // Remove o 'v' inicial da tag do GitHub (ex: "v0.2.0" -> "0.2.0")
             var latestVersion = new Version(latestRelease.TagName.Replace("v", ""));
 
             if (latestVersion > currentVersion)
