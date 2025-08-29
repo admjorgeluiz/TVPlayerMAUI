@@ -20,6 +20,7 @@ public partial class MainPage : ContentPage
 {
     private readonly MainPageViewModel _viewModel;
     private IDispatcherTimer? _hideControlsTimer;
+    public string AppVersion => AppInfo.Current.VersionString;
 
     public MainPage(MainPageViewModel viewModel)
     {
