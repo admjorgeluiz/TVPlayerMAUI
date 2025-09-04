@@ -18,25 +18,40 @@ public class UpdateService
     {
         try
         {
-            var currentVersion = new Version(AppInfo.Current.VersionString);
+            // Versão atual robusta (Windows sem MSIX usa AssemblyVersion)
+            Version currentVersion;
+            var asmVer = typeof(App).Assembly.GetName().Version;
+            if (asmVer is not null)
+            {
+                currentVersion = asmVer;
+            }
+            else if (!Version.TryParse(AppInfo.Current.VersionString, out currentVersion))
+            {
+                currentVersion = new Version(0, 0, 0);
+            }
 
             var response = await _httpClient.GetStringAsync(GitHubApiUrl);
             var latestRelease = JsonSerializer.Deserialize<GitHubRelease>(response);
 
             if (latestRelease is null || string.IsNullOrWhiteSpace(latestRelease.TagName))
-            {
                 return (false, string.Empty, string.Empty);
-            }
 
-            var latestVersion = new Version(latestRelease.TagName.Replace("v", ""));
+            // Aceita 'v1.2', 'V1.2.0' etc.
+            var tag = latestRelease.TagName.Trim().TrimStart('v', 'V');
+            if (!Version.TryParse(tag, out var latestVersion))
+                return (false, string.Empty, string.Empty);
 
             if (latestVersion > currentVersion)
             {
-                var installerAsset = latestRelease.Assets.FirstOrDefault(a => a.DownloadUrl.EndsWith(".exe"));
+                // Ajuste a extensão conforme o que você publica: ".exe", ".msi" ou ".msixbundle"
+                var installerAsset = latestRelease.Assets
+                    .FirstOrDefault(a =>
+                        a.DownloadUrl.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
+                        a.DownloadUrl.EndsWith(".msi", StringComparison.OrdinalIgnoreCase) ||
+                        a.DownloadUrl.EndsWith(".msixbundle", StringComparison.OrdinalIgnoreCase));
+
                 if (installerAsset is not null)
-                {
                     return (true, latestRelease.TagName, installerAsset.DownloadUrl);
-                }
             }
         }
         catch (Exception ex)
@@ -46,4 +61,5 @@ public class UpdateService
 
         return (false, string.Empty, string.Empty);
     }
+
 }

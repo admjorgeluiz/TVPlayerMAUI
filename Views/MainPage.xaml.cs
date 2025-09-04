@@ -12,6 +12,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Windows.System;
 using Microsoft.UI;
+using Windows.System.Display;
 #endif
 
 namespace TVPlayerMAUI.Views;
@@ -20,7 +21,9 @@ public partial class MainPage : ContentPage
 {
     private readonly MainPageViewModel _viewModel;
     private IDispatcherTimer? _hideControlsTimer;
-    public string AppVersion => AppInfo.Current.VersionString;
+    public string AppVersion =>
+        typeof(App).Assembly.GetName().Version?.ToString() ??
+        AppInfo.Current.VersionString;
 
     public MainPage(MainPageViewModel viewModel)
     {
@@ -36,6 +39,7 @@ public partial class MainPage : ContentPage
     {
         _viewModel.PropertyChanged += ViewModel_PropertyChanged;
         SetupKeyboardHooks();
+
     }
 
     private void MainPage_Unloaded(object? sender, EventArgs e)
@@ -45,16 +49,30 @@ public partial class MainPage : ContentPage
         _hideControlsTimer?.Stop();
     }
 
+#if WINDOWS
+    private DisplayRequest? _displayRequest;
+#endif
+
     private void MediaPlayer_StateChanged(object? sender, MediaStateChangedEventArgs e)
     {
-        if (e.NewState == MediaElementState.Playing)
+        // Manter a tela ligada em estados que ainda fazem parte da reprodução
+        bool keepOn = e.NewState is MediaElementState.Opening
+                                   or MediaElementState.Buffering
+                                   or MediaElementState.Playing;
+
+        DeviceDisplay.Current.KeepScreenOn = keepOn;
+
+#if WINDOWS
+        if (keepOn)
         {
-            DeviceDisplay.Current.KeepScreenOn = true;
+            _displayRequest ??= new DisplayRequest();
+            _displayRequest.RequestActive();
         }
         else
         {
-            DeviceDisplay.Current.KeepScreenOn = false;
+            _displayRequest?.RequestRelease();
         }
+#endif
     }
 
     private void SetupKeyboardHooks()
@@ -175,7 +193,10 @@ public partial class MainPage : ContentPage
 
     public void EnterFullScreen()
     {
+        DeviceDisplay.Current.KeepScreenOn = true;
 #if WINDOWS
+        _displayRequest ??= new DisplayRequest();
+        _displayRequest.RequestActive();  // <-- manter ativo, não soltar
         var window = this.GetParentWindow();
         if (window?.Handler?.PlatformView is MauiWinUIWindow nativeWindow)
         {
@@ -187,6 +208,7 @@ public partial class MainPage : ContentPage
         }
 #endif
     }
+
 
     public void ExitFullScreen()
     {
@@ -209,4 +231,13 @@ public partial class MainPage : ContentPage
         return AppWindow.GetFromWindowId(windowId);
     }
 #endif
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        DeviceDisplay.Current.KeepScreenOn = false;
+#if WINDOWS
+        _displayRequest?.RequestRelease();
+#endif
+    }
 }
