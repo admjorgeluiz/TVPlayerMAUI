@@ -13,6 +13,7 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+            // .UseAdMob()
             .UseMauiCommunityToolkit()
             .UseMauiCommunityToolkitMediaElement()
             .ConfigureFonts(fonts =>

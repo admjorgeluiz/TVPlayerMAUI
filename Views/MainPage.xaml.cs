@@ -21,6 +21,7 @@ public partial class MainPage : ContentPage
 {
     private readonly MainPageViewModel _viewModel;
     private IDispatcherTimer? _hideControlsTimer;
+
     public string AppVersion =>
         typeof(App).Assembly.GetName().Version?.ToString() ??
         AppInfo.Current.VersionString;
@@ -39,7 +40,6 @@ public partial class MainPage : ContentPage
     {
         _viewModel.PropertyChanged += ViewModel_PropertyChanged;
         SetupKeyboardHooks();
-
     }
 
     private void MainPage_Unloaded(object? sender, EventArgs e)
@@ -55,7 +55,6 @@ public partial class MainPage : ContentPage
 
     private void MediaPlayer_StateChanged(object? sender, MediaStateChangedEventArgs e)
     {
-        // Manter a tela ligada em estados que ainda fazem parte da reprodução
         bool keepOn = e.NewState is MediaElementState.Opening
                                    or MediaElementState.Buffering
                                    or MediaElementState.Playing;
@@ -101,14 +100,14 @@ public partial class MainPage : ContentPage
 #if WINDOWS
     private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
     {
+        if (M3uUrlEntry.IsFocused || ChannelSearchBar.IsFocused)
+            return;
+
         switch (e.Key)
         {
             case VirtualKey.Space:
-                if (!M3uUrlEntry.IsFocused && !ChannelSearchBar.IsFocused)
-                {
-                    TogglePlayPause();
-                    e.Handled = true;
-                }
+                TogglePlayPause();
+                e.Handled = true;
                 break;
             case VirtualKey.Escape:
                 if (_viewModel.IsVideoFullScreen)
@@ -132,17 +131,30 @@ public partial class MainPage : ContentPage
         _hideControlsTimer.Tick += async (s, e) =>
         {
             _hideControlsTimer.Stop();
-            if (FullScreenOverlay is not null && _viewModel.IsVideoFullScreen)
-                await FullScreenOverlay.FadeTo(0);
+
+            if (VideoControlsOverlay is not null)
+            {
+                await VideoControlsOverlay.FadeTo(0);
+                VideoControlsOverlay.InputTransparent = true;
+            }
         };
     }
 
     private void FullScreen_PointerMoved(object sender, PointerEventArgs e)
     {
-        if (FullScreenOverlay is not null)
-            FullScreenOverlay.Opacity = 1.0;
+        if (VideoControlsOverlay is not null)
+        {
+            VideoControlsOverlay.Opacity = 1.0;
+            VideoControlsOverlay.InputTransparent = false;
+        }
 
+        _hideControlsTimer?.Stop();
         _hideControlsTimer?.Start();
+    }
+
+    private void BtnToggleMenu_Clicked(object sender, EventArgs e)
+    {
+        SideMenuGrid.IsVisible = !SideMenuGrid.IsVisible;
     }
 
     private void PlayPauseButton_Clicked(object sender, EventArgs e)
@@ -168,6 +180,14 @@ public partial class MainPage : ContentPage
             mediaPlayer.Play();
             PlayPauseButton.Text = "Pause";
         }
+
+        if (VideoControlsOverlay is not null)
+        {
+            VideoControlsOverlay.Opacity = 1.0;
+            VideoControlsOverlay.InputTransparent = false;
+            _hideControlsTimer?.Stop();
+            _hideControlsTimer?.Start();
+        }
     }
 
     private void timelineSlider_DragCompleted(object sender, EventArgs e)
@@ -175,6 +195,8 @@ public partial class MainPage : ContentPage
         if (sender is Slider slider)
         {
             mediaPlayer.SeekTo(TimeSpan.FromSeconds(slider.Value));
+            _hideControlsTimer?.Stop();
+            _hideControlsTimer?.Start();
         }
     }
 
@@ -187,7 +209,14 @@ public partial class MainPage : ContentPage
     {
         if (e.PropertyName == nameof(MainPageViewModel.IsVideoFullScreen))
         {
-            if (_viewModel.IsVideoFullScreen) { EnterFullScreen(); } else { ExitFullScreen(); }
+            if (_viewModel.IsVideoFullScreen)
+            {
+                EnterFullScreen();
+            }
+            else
+            {
+                ExitFullScreen();
+            }
         }
     }
 
@@ -196,19 +225,24 @@ public partial class MainPage : ContentPage
         DeviceDisplay.Current.KeepScreenOn = true;
 #if WINDOWS
         _displayRequest ??= new DisplayRequest();
-        _displayRequest.RequestActive();  // <-- manter ativo, não soltar
+        _displayRequest.RequestActive();
+
         var window = this.GetParentWindow();
         if (window?.Handler?.PlatformView is MauiWinUIWindow nativeWindow)
         {
             var appWindow = GetAppWindow(nativeWindow);
             appWindow?.SetPresenter(AppWindowPresenterKind.FullScreen);
-            FullScreenOverlay.Opacity = 1.0;
-            _hideControlsTimer?.Start();
+
+            if (VideoControlsOverlay != null)
+            {
+                VideoControlsOverlay.Opacity = 1.0;
+                VideoControlsOverlay.InputTransparent = false;
+                _hideControlsTimer?.Start();
+            }
             mediaPlayer.Focus();
         }
 #endif
     }
-
 
     public void ExitFullScreen()
     {
