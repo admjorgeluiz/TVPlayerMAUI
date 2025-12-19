@@ -21,6 +21,7 @@ public partial class MainPage : ContentPage
 {
     private readonly MainPageViewModel _viewModel;
     private IDispatcherTimer? _hideControlsTimer;
+    private Point _lastPointerPosition = new Point(0, 0);
 
     public string AppVersion =>
         typeof(App).Assembly.GetName().Version?.ToString() ??
@@ -142,14 +143,30 @@ public partial class MainPage : ContentPage
 
     private void FullScreen_PointerMoved(object sender, PointerEventArgs e)
     {
+        var currentPositionNullable = e.GetPosition((View)sender);
+
+        if (currentPositionNullable is null)
+            return;
+
+        Point currentPosition = currentPositionNullable.Value;
+
+        if (_lastPointerPosition.Distance(currentPosition) < 5.0)
+            return;
+
+        _lastPointerPosition = currentPosition;
+
         if (VideoControlsOverlay is not null)
         {
-            VideoControlsOverlay.Opacity = 1.0;
-            VideoControlsOverlay.InputTransparent = false;
-        }
 
-        _hideControlsTimer?.Stop();
-        _hideControlsTimer?.Start();
+            if (VideoControlsOverlay.Opacity < 1.0)
+            {
+                VideoControlsOverlay.Opacity = 1.0;
+                VideoControlsOverlay.InputTransparent = false;
+            }
+
+            _hideControlsTimer?.Stop();
+            _hideControlsTimer?.Start();
+        }
     }
 
     private void BtnToggleMenu_Clicked(object sender, EventArgs e)
